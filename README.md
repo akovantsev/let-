@@ -8,7 +8,7 @@
 ;; in deps.edn
 {:deps {github-akovantsev/let-plus
         {:git/url "https://github.com/akovantsev/let-plus"
-         :sha     ""}}} ;; actual sha
+         :sha     "c9304d05705a9f6248538e11f47bf6ffde0a6166"}}} ;; actual sha
 ```
 
 ## Howto
