@@ -85,7 +85,8 @@ Just illustrates what `mm`s args are:
 => [:a
     4
     #{[:c 5] ["b" 4] [1 :a]}
-    [1 :a] "[1 :a][\"b\" 4][:c 5]"
+    [1 :a]
+    "[1 :a][\"b\" 4][:c 5]"
     {1 :a, "b" 4, :c 5}
     "{1 :a, \"b\" 4, :c 5}"
     5]
@@ -119,7 +120,7 @@ This is how you might plug https://github.com/akovantsev/slet into `let+`:
 
 ;; reminder:
 ;; :spec  does not validate `right` against :spec spec; allows only :keys declared in :spec spec at macro-expansion time
-;; :conf  does not validate, or conforms `right` against :conf spec; allows only :keys declared in :conf spec + branch tabs (like s/cat).
+;; :conf  does not validate, or conforms `right` against :conf spec; allows only :keys declared in :conf spec + branch tags (like s/cat).
 ;; :spec! same as :spec but validates `right` against :spec spec first.
 ;; :conf! same as :conf, but conforms `right` against :conf spec first.
 
