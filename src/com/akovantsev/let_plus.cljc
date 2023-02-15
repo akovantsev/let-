@@ -25,7 +25,8 @@
                          get-pairs    (fn f3 [[k v]]
                                         (let [pairs (mm k v left right)]
                                           (assert (->> pairs count even?))
-                                          (assert (->> pairs (every? #(-> % count #{2}))))))
+                                          (assert (->> pairs (every? #(-> % count #{2}))))
+                                          pairs))
 
                          custom-pairs (->> custom (mapcat get-pairs) (reduce into []))]
 
