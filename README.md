@@ -13,22 +13,41 @@
 
 ## Howto
 
-Just extend `com.akovantsev.let-plus/mm` multimethod (and don't forget to load your extension):
+Unfortunately, `cljs` makes extending a bit more involved than just extending multimethod.
+<br>(for some reference see https://github.com/clojure/test.check/commit/489d54d10ddf03b3dcc704be223c35529e9a9cd1)
+<br>"Luckily" it also works for `clj`, so at least you dont need 2 different approaches.
+<br>One way is to wrap `let+` in another macro (`let+` or any name you like) after all `defmethod`s are expanded "in js", and use redefined version instead:
 ```clojure
-(defmulti mm (fn [k v left right] k))
+(ns my.cljc.ns  ;;.cljc
+  #?(:cljs (:require-macros [my.cljc.ns :refer [my-let+]]))
+  (:require [com.akovantsev.let-plus :as let-plus]))
+
+;; do or import your extensions.
+;; must return seq of pairs, or empty seq, or nil:
+(defmethod let-plus/mm :my-key [k v left right] ...)
+
+;; wrap `let+` into another macro, needed only for cljs, but works for clj too.
+;; `defmacro` has to be done after `defmethod` but before usage.
+#?(:clj (defmacro my-let+ [pairs & bodies] `(let-plus/let+ ~pairs ~@bodies)))
+
+(my-let+ [{:my-key ...} ...]
+  ...)
 ```
+
 <br>`mm` dispatches by `k`, but gets entire (original) destructuring map as argument, so:
 - you can use multiple keys to do things, like `:spec` and `:conf` example below
 - but this means "signatures" for keys from multiple `let+` plugins might conflict.
     ```clojure
     (defmethod mm :a [k v left right] (assert (-> left :c set?)))
     (defmethod mm :b [k v left right] (assert (-> left :c list?)))
+  
+    #?(:clj (defmacro my-let+ [pairs & bodies] `(let-plus/let+ ~pairs ~@bodies)))
     
-    (let+ [{:a [] :b [] :c #{}} 1] [a b c])
+    (my-let+ [{:a [] :b [] :c #{}} 1] [a b c])
     Unexpected error (AssertionError) macroexpanding let+
     Assert failed: (-> left :c list?)
     
-    (let+ [{:a [] :b [] :c ()} 1] [a b c])
+    (my-let+ [{:a [] :b [] :c ()} 1] [a b c])
     Unexpected error (AssertionError) macroexpanding let+
     Assert failed: (-> left :c set?)
     ```
@@ -43,6 +62,8 @@ Just illustrates what `mm`s args are:
 (defmethod mm :print [k v left right]
   (prn [k v left right]))  ;; prints during macro-expansion
                            ;; returns even number (0) of pairs: nil
+
+#?(:clj (defmacro let+ [pairs & bodies] `(let-plus/let+ ~pairs ~@bodies)))
 
 (let+ [{:print [1 2 3] :keys [a] :as m} (assoc {} :a 1)]
   [a m])
@@ -78,6 +99,7 @@ Just illustrates what `mm`s args are:
                   [k (list `get right `~v)])))
             [] x))))))
 
+#?(:clj (defmacro let+ [pairs & bodies] `(com.akovantsev.let-plus/let+ ~pairs ~@bodies)))
 
 (let+ [{:juxt [str/join str first {x 1} set {y "b"}] :keys [:c] :as m} {1 :a "b" 4 :c 5}]
   [x y set first join m str c])
@@ -113,6 +135,8 @@ This is how you might plug https://github.com/akovantsev/slet into `let+`:
 (defmethod let-plus/mm :conf  [k v left right] (-> left (select-keys [:as :keys :conf]) (-slet right false)))
 (defmethod let-plus/mm :spec! [k v left right] (-> left (select-keys [:as :keys :spec!]) (set/rename-keys {:spec! :spec}) (-slet right true)))
 (defmethod let-plus/mm :conf! [k v left right] (-> left (select-keys [:as :keys :conf!]) (set/rename-keys {:conf! :conf}) (-slet right true)))
+
+#?(:clj (defmacro let+ [pairs & bodies] `(let-plus/let+ ~pairs ~@bodies)))
 
 
 (s/def ::a (s/cat ::one #{1} ::two #{2}))
